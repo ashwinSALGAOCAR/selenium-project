@@ -62,7 +62,8 @@ time.sleep(5)
 print "Done"
 
 #Follow new users
-followers = driver.find_elements(By.XPATH, '//button[text()="Follow"]')
+follow_button = driver.find_elements(By.XPATH, '//button[(text()="Follow")]')
+
 '''+ driver.find_elements(By.XPATH, '//button[text()="Following"]') + driver.find_elements(By.XPATH, '//button[text()="Requested"]')'''
 
 print "Sleeping to load scroll bar element"
@@ -75,23 +76,22 @@ min = 2
 max = 8
 count = 0
 
-actions = ActionChains(driver)
 
-for follower in followers:
+
+for follower in follow_button:
     print follower
     # ActionChains(driver).move_to_element(Follow_elem[0]).click().perform()
 #    if follower == driver.find_element(By.XPATH, '//button[text()="Follow"]'):
-    actions.move_to_element(follower)
-    actions.click(follower).perform()
+    ActionChains(driver).move_to_element(follower).click(follower).perform()
 #    follower.click()
-    print "Waiting to click follow to complete"
-    time.sleep(3)
-    print "Done"
-    scroll_bar.send_keys(Keys.DOWN)
-    print "Followed"
+    print "Waiting for click on follow to complete"
     delay_time = random.randint(min, max)
     time.sleep(delay_time)
-'''    elif follower == driver.find_element(By.XPATH, '//button[text()="Requested"]'):
+    print "Done"
+    print "Followed"
+    ActionChains(driver).send_keys(Keys.DOWN).perform()
+
+    '''    elif follower == driver.find_element(By.XPATH, '//button[text()="Requested"]'):
         print follower
         print "Requested"
         delay_time = random.randint(min, max)
