@@ -24,7 +24,6 @@ time.sleep(10)
 print "Done"
 
 username_elem = driver.find_elements_by_xpath("//input[@name='username']")
-
 ActionChains(driver).move_to_element(username_elem[0]).click().send_keys(username).perform()
 
 password_elem = driver.find_elements_by_xpath("//input[@name='password']")
@@ -54,6 +53,7 @@ assert "Particle" in driver.title
 print "Sleeping to load Particle IO profile page."
 time.sleep(5)
 print "Done"
+
 followers_elem = driver.find_element_by_partial_link_text("followers")
 followers_elem.click()
 
@@ -62,7 +62,7 @@ time.sleep(5)
 print "Done"
 
 #Follow new users
-follow_button = driver.find_elements(By.XPATH, '//button[(text()="Follow")]')
+
 
 '''+ driver.find_elements(By.XPATH, '//button[text()="Following"]') + driver.find_elements(By.XPATH, '//button[text()="Requested"]')'''
 
@@ -72,36 +72,61 @@ print "Done"
 
 scroll_bar = driver.find_element_by_xpath('//div[@role="dialog"]//a')
 
-min = 2
-max = 8
-count = 0
+def get_one_page_followers():
+    
+    min = 2
+    max = 8
+    count = 0
+    follow_button = driver.find_elements(By.XPATH, '//button[(text()="Follow")]')
+    for follower in follow_button:
+        print follower
+        # ActionChains(driver).move_to_element(Follow_elem[0]).click().perform()
+        #    if follower == driver.find_element(By.XPATH, '//button[text()="Follow"]'):
+        while follower.is_displayed() == False:
+            ActionChains(driver).send_keys(Keys.END).perform()
 
+        ActionChains(driver).move_to_element(follower).click(follower).perform()
+        print "Waiting for click on follow to complete"
+        delay_time = random.randint(min, max)
+        time.sleep(delay_time)
+        print "Done"
+        print "Followed"
+        ActionChains(driver).send_keys(Keys.DOWN).perform()
 
-
-for follower in follow_button:
-    print follower
-    # ActionChains(driver).move_to_element(Follow_elem[0]).click().perform()
-#    if follower == driver.find_element(By.XPATH, '//button[text()="Follow"]'):
-    ActionChains(driver).move_to_element(follower).click(follower).perform()
-#    follower.click()
-    print "Waiting for click on follow to complete"
-    delay_time = random.randint(min, max)
-    time.sleep(delay_time)
-    print "Done"
-    print "Followed"
-    ActionChains(driver).send_keys(Keys.DOWN).perform()
-
-    '''    elif follower == driver.find_element(By.XPATH, '//button[text()="Requested"]'):
+        '''    elif follower == driver.find_element(By.XPATH, '//button[text()="Requested"]'):
         print follower
         print "Requested"
         delay_time = random.randint(min, max)
         time.sleep(delay_time)
-    elif follower == driver.find_element(By.XPATH, '//button[text()="Following"]'):
+        elif follower == driver.find_element(By.XPATH, '//button[text()="Following"]'):
         print follower
         print "Following"
         delay_time = random.randint(min, max)
         time.sleep(delay_time)
-'''
+        '''
+get_one_page_followers()
+scroll_bar.send_keys(Keys.END)
+time.sleep(3)
+
+get_one_page_followers()
+scroll_bar.send_keys(Keys.END)
+time.sleep(3)
+
+get_one_page_followers()
+scroll_bar.send_keys(Keys.END)
+time.sleep(3)
+
+get_one_page_followers()
+scroll_bar.send_keys(Keys.END)
+time.sleep(3)
+
+get_one_page_followers()
+scroll_bar.send_keys(Keys.END)
+time.sleep(3)
+
+get_one_page_followers()
+scroll_bar.send_keys(Keys.END)
+time.sleep(3)
 
 #    count+=1
 #    if count ==10:
@@ -125,5 +150,3 @@ scroll_bar.send_keys(Keys.END)
 #elem_go.click()
 #assert "No results found." not in driver.page_source
 #driver.close()
-
-
