@@ -5,8 +5,10 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.firefox.options import Options
 
 from credentials  import username, password
+
 
 driver = webdriver.Firefox()
 driver.get("https://www.instagram.com/particle_io/")
@@ -72,39 +74,56 @@ print "Done"
 
 scroll_bar = driver.find_element_by_xpath('//div[@role="dialog"]//a')
 
+min = 2
+max = 8
+count = 0
+
 def get_one_page_followers():
     
-    min = 2
-    max = 8
-    count = 0
-    follow_button = driver.find_elements(By.XPATH, '//button[(text()="Follow")]')
-    for follower in follow_button:
-        print follower
-        # ActionChains(driver).move_to_element(Follow_elem[0]).click().perform()
-        #    if follower == driver.find_element(By.XPATH, '//button[text()="Follow"]'):
-        while follower.is_displayed() == False:
-            ActionChains(driver).send_keys(Keys.END).perform()
+    try:
+        print "Try Block"
+        follow_button = driver.find_elements(By.XPATH, '//button[(text()="Follow")]')
+        for follower in follow_button:
+            print follower
+            # ActionChains(driver).move_to_element(Follow_elem[0]).click().perform()
+            #    if follower == driver.find_element(By.XPATH, '//button[text()="Follow"]'):
+            while follower.is_displayed() == False:
+                ActionChains(driver).send_keys(Keys.END).perform()
 
-        ActionChains(driver).move_to_element(follower).click(follower).perform()
-        print "Waiting for click on follow to complete"
-        delay_time = random.randint(min, max)
-        time.sleep(delay_time)
-        print "Done"
-        print "Followed"
-        ActionChains(driver).send_keys(Keys.DOWN).perform()
+            ActionChains(driver).move_to_element(follower).click(follower).perform()
+            print "Waiting for click on follow to complete"
+            delay_time = random.randint(min, max)
+            time.sleep(delay_time)
+            print "Done"
+            print "Followed"
+            ActionChains(driver).send_keys(Keys.DOWN).perform()
+            #
+            #driver.save_screenshot('/home/ashwin/Downloads/headless_insta.png')
+            #print "Screenshot Saved to Downloads."
+            #
+            
+            '''    elif follower == driver.find_element(By.XPATH, '//button[text()="Requested"]'):
+            print follower
+            print "Requested"
+            delay_time = random.randint(min, max)
+            time.sleep(delay_time)
+            elif follower == driver.find_element(By.XPATH, '//button[text()="Following"]'):
+            print follower
+            print "Following"
+            delay_time = random.randint(min, max)
+            time.sleep(delay_time)
+            '''
+    except:
+        print "Except Block"
+        ActionChains(driver).send_keys(Keys.END).perform()
+        time.sleep(3)
 
-        '''    elif follower == driver.find_element(By.XPATH, '//button[text()="Requested"]'):
-        print follower
-        print "Requested"
-        delay_time = random.randint(min, max)
-        time.sleep(delay_time)
-        elif follower == driver.find_element(By.XPATH, '//button[text()="Following"]'):
-        print follower
-        print "Following"
-        delay_time = random.randint(min, max)
-        time.sleep(delay_time)
-        '''
-get_one_page_followers()
+while True:
+    get_one_page_followers()
+    scroll_bar.send_keys(Keys.END)
+    time.sleep(3)
+
+'''
 scroll_bar.send_keys(Keys.END)
 time.sleep(3)
 
@@ -127,7 +146,7 @@ time.sleep(3)
 get_one_page_followers()
 scroll_bar.send_keys(Keys.END)
 time.sleep(3)
-
+'''
 #    count+=1
 #    if count ==10:
 
