@@ -1,9 +1,9 @@
 # selenium-project
 - Create a virtual env
 
-    **virtualenv selenium
+    **virtualenv selenium**
 
-    source selenium/bin/activate**
+    **source selenium/bin/activate**
     
 - Steps to install selenium;
 
