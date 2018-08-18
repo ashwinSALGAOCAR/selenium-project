@@ -10,7 +10,10 @@ from selenium.webdriver.firefox.options import Options
 from credentials  import username, password
 
 
-driver = webdriver.Firefox()
+options = Options()
+options.set_headless(headless = True)
+driver = webdriver.Firefox(firefox_options = options)
+print "Running Firefox in headless mode"
 driver.get("https://www.instagram.com/particle_io/")
 assert "Particle" in driver.title
 
@@ -63,14 +66,6 @@ print "Waiting to load its Followers"
 time.sleep(5)
 print "Done"
 
-#Follow new users
-
-
-'''+ driver.find_elements(By.XPATH, '//button[text()="Following"]') + driver.find_elements(By.XPATH, '//button[text()="Requested"]')'''
-
-print "Sleeping to load scroll bar element"
-time.sleep(4)
-print "Done"
 
 scroll_bar = driver.find_element_by_xpath('//div[@role="dialog"]//a')
 
@@ -98,24 +93,12 @@ def get_one_page_followers():
             print "Followed"
             ActionChains(driver).send_keys(Keys.DOWN).perform()
             #
-            #driver.save_screenshot('/home/ashwin/Downloads/headless_insta.png')
-            #print "Screenshot Saved to Downloads."
+            driver.save_screenshot('/home/ashwin/Downloads/headless_insta.png')
+            print "Screenshot Saved to Downloads."
             #
-            
-            '''    elif follower == driver.find_element(By.XPATH, '//button[text()="Requested"]'):
-            print follower
-            print "Requested"
-            delay_time = random.randint(min, max)
-            time.sleep(delay_time)
-            elif follower == driver.find_element(By.XPATH, '//button[text()="Following"]'):
-            print follower
-            print "Following"
-            delay_time = random.randint(min, max)
-            time.sleep(delay_time)
-            '''
     except:
         print "Except Block"
-        ActionChains(driver).send_keys(Keys.END).perform()
+        ActionChains(driver).send_keys(Keys.PAGE_DOWN).perform()
         time.sleep(3)
 
 while True:
@@ -123,49 +106,4 @@ while True:
     scroll_bar.send_keys(Keys.END)
     time.sleep(3)
 
-'''
-scroll_bar.send_keys(Keys.END)
-time.sleep(3)
-
-get_one_page_followers()
-scroll_bar.send_keys(Keys.END)
-time.sleep(3)
-
-get_one_page_followers()
-scroll_bar.send_keys(Keys.END)
-time.sleep(3)
-
-get_one_page_followers()
-scroll_bar.send_keys(Keys.END)
-time.sleep(3)
-
-get_one_page_followers()
-scroll_bar.send_keys(Keys.END)
-time.sleep(3)
-
-get_one_page_followers()
-scroll_bar.send_keys(Keys.END)
-time.sleep(3)
-'''
-#    count+=1
-#    if count ==10:
-
-
-print "Waiting to get to the end of follwers page"
-time.sleep(5)
-print "Done"
-
-#element_inside_popup = driver.find_element_by_xpath('//div[@role="dialog"]//a')
-scroll_bar.send_keys(Keys.END)
-
-#username_elem = driver.find_element(By.XPATH, '//label[text()="Phone number, username, or email"]')
-
-
-#login_elem = driver.find_element_by_class("")
-#elem = driver.find_element_by_name("q")
-#elem.clear()
-#elem.send_keys("pycon")
-#elem_go = driver.find_element_by_id("submit")
-#elem_go.click()
-#assert "No results found." not in driver.page_source
 #driver.close()
