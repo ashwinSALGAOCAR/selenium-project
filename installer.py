@@ -10,40 +10,54 @@ from selenium.webdriver.firefox.options import Options
 from credentials  import username, password
 
 
+min = 3
+max = 8
+count = 0
+
+print "Setting the Browser."
 options = Options()
 options.set_headless(headless = True)
 driver = webdriver.Firefox(firefox_options = options)
-print "Running Firefox in headless mode"
-driver.get("https://www.instagram.com/particle_io/")
-assert "Particle" in driver.title
+print "Running Firefox in headless mode."
 
-print "Waiting for the page to load all elements"
-time.sleep(5)
-print "Done"
+def variable_delay():
+    delay_time = random.randint(min, max)
+    time.sleep(delay_time)
 
-login_elem = driver.find_element(By.XPATH, '//button[text()="Log In"]')
-login_elem.click()
+def open_link():
+    driver.get("https://www.instagram.com/particle_io/")
+    assert "Particle" in driver.title
+    
+    print "Sleeping to load Particle IO profile page."
+    variable_delay()
+    print "Done"
 
-print "Sleeping to load the Log In Page"
-time.sleep(10)
-print "Done"
+def get_login_page():
+    login_elem = driver.find_element(By.XPATH, '//button[text()="Log In"]')
+    login_elem.click()
 
-username_elem = driver.find_elements_by_xpath("//input[@name='username']")
-ActionChains(driver).move_to_element(username_elem[0]).click().send_keys(username).perform()
+    print "Sleeping to load the Log In Page."
+    variable_delay()
+    print "Done"
 
-password_elem = driver.find_elements_by_xpath("//input[@name='password']")
-ActionChains(driver).move_to_element(password_elem[0]).click().send_keys(password).perform()
+def login():
+    username_elem = driver.find_elements_by_xpath("//input[@name='username']")
+    ActionChains(driver).move_to_element(username_elem[0]).click().send_keys(username).perform()
 
-print "Sleeping to verify Login Info"
-time.sleep(3)
-print "Done"
+    password_elem = driver.find_elements_by_xpath("//input[@name='password']")
+    ActionChains(driver).move_to_element(password_elem[0]).click().send_keys(password).perform()
 
-login_elem1 = driver.find_element(By.XPATH, '//button[text()="Log in"]')
-login_elem1.click()
+    print "Sleeping to verify Login Info."
+    variable_delay()
+    print "Done"
 
-print "Sleeping to load Home page"
-time.sleep(8)
-print "Done"
+    login_elem1 = driver.find_element(By.XPATH, '//button[text()="Log in"]')
+    login_elem1.click()
+
+    print "Sleeping to load Home page."
+    variable_delay()
+    print "Done"
+
 
 #if (close_elem = driver.find_element(By.XPATH, '//button[text()="Close"]')):
 #   close_elem.click()
@@ -52,28 +66,17 @@ print "Done"
 #ActionChains(driver).move_to_element(search_elem[0]).click().send_keys("particleio").perform()
 
 
-driver.get("https://www.instagram.com/particle_io/")
-assert "Particle" in driver.title
+def click_on_followers():
+    followers_elem = driver.find_element_by_partial_link_text("followers")
+    followers_elem.click()
 
-print "Sleeping to load Particle IO profile page."
-time.sleep(5)
-print "Done"
-
-followers_elem = driver.find_element_by_partial_link_text("followers")
-followers_elem.click()
-
-print "Waiting to load its Followers"
-time.sleep(5)
-print "Done"
+    print "Waiting to load its Followers."
+    variable_delay()
+    print "Done"
 
 
-scroll_bar = driver.find_element_by_xpath('//div[@role="dialog"]//a')
 
-min = 2
-max = 8
-count = 0
-
-def get_one_page_followers():
+def scroll_followers():
     
     try:
         print "Try Block"
@@ -86,24 +89,37 @@ def get_one_page_followers():
                 ActionChains(driver).send_keys(Keys.END).perform()
 
             ActionChains(driver).move_to_element(follower).click(follower).perform()
-            print "Waiting for click on follow to complete"
-            delay_time = random.randint(min, max)
-            time.sleep(delay_time)
-            print "Done"
-            print "Followed"
-            ActionChains(driver).send_keys(Keys.DOWN).perform()
+            variable_delay()
             #
             driver.save_screenshot('/home/ashwin/Downloads/headless_insta.png')
             print "Screenshot Saved to Downloads."
             #
+            print "Waiting for click on follow to complete"
+            variable_delay()
+            print "Followed"
+            ActionChains(driver).send_keys(Keys.DOWN).perform()
+
     except:
         print "Except Block"
         ActionChains(driver).send_keys(Keys.PAGE_DOWN).perform()
-        time.sleep(3)
+        variable_delay()
+
+
+open_link()
+
+get_login_page()
+
+login()
+
+open_link()
+
+click_on_followers()
+
+scroll_bar = driver.find_element_by_xpath('//div[@role="dialog"]//a')
 
 while True:
-    get_one_page_followers()
+    scroll_followers()
     scroll_bar.send_keys(Keys.END)
-    time.sleep(3)
+    variable_delay()
 
 #driver.close()
