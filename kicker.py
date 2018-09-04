@@ -2,6 +2,7 @@ import sys
 import time
 import random
 import logging
+from datetime import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -9,20 +10,18 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.firefox.options import Options
 
-from selenium.common.exceptions import ElementNotInteractableException
-from selenium.common.exceptions import StaleElementReferenceException
 
 BROWSER = None
 TIME_DEFAULT = 5
 PROJECT_COUNT = 0
 PAGE_COUNT = 1
-SUCCESSFUL_PROJECTS_LIST = open("Successful_project_list.txt", "w+")
+DELAYS = {'page_load': 3, 'search_load': 4, 'ajax_load': 2, 'go_back_load': 1}
 
+SUCCESSFUL_PROJECTS_LIST = open("Successful_project_list.txt", "w+")
 LOG = logging.getLogger('Kickstarter_Search_Service')
 FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(level = logging.INFO, format = FORMAT)
 
-DELAYS = {'page_load': 3, 'search_load': 4, 'ajax_load': 2, 'go_back_load': 1}
 
 def init_browser(headless = False):
     options = Options()
@@ -35,7 +34,6 @@ def init_browser(headless = False):
 def get_kickstarter_page(BROWSER):
     BROWSER.get("https://www.kickstarter.com/")
     assert "Kickstarter" in BROWSER.title
-
     LOG.info("Waiting for the page to load all elements")
     time.sleep(DELAYS.get("page_load", TIME_DEFAULT))
     LOG.info("Done")
@@ -43,42 +41,29 @@ def get_kickstarter_page(BROWSER):
 def search(BROWSER):
     search_elem = BROWSER.find_element(By.XPATH, '//button/span[text()="Search"]')
     ActionChains(BROWSER).move_to_element(search_elem).click().send_keys('DIY Electronics').perform()
-
     LOG.info("Waiting for the page to load search results")
     time.sleep(DELAYS.get("search_load", TIME_DEFAULT))
     LOG.info("Done")
-
     categories_elem = BROWSER.find_element(By.XPATH, '//div/span[text()="All"]')
     categories_elem.click()
-    
     LOG.info("Waiting for the page to load Categories")
     time.sleep(DELAYS.get("page_load", TIME_DEFAULT))
     LOG.info("Done")
-
     more_filters_elem = BROWSER.find_element(By.XPATH, '//*[@id="filters"]')
     more_filters_elem.click()
-
     LOG.info("Waiting for ajax element to load more filters")
     time.sleep(DELAYS.get("ajax_load", TIME_DEFAULT))
     LOG.info("Done")
-
-    #filter_project_elem = BROWSER.find_element(By.XPATH, '//span/span[text()="All projects"]')
-    #ActionChains(BROWSER).move_to_element(filter_project_elem).click().perform()
-
     successful_proj_elem = BROWSER.find_element(By.XPATH, '//select[@name="state"]/option[text()="Successful projects"]')
     successful_proj_elem.click()
-
     LOG.info("Waiting for ajax element to load page with the selected option")
     time.sleep(DELAYS.get("page_load", TIME_DEFAULT))
     LOG.info("Done")
-
     more_filters_elem.click()
     time.sleep(2)
-
     sort_by_element = BROWSER.find_element(By.XPATH, '//span[text()="Magic"]')
     sort_by_element.click()
     time.sleep(2)
-
     sort_by_date_elem = BROWSER.find_element(By.XPATH, '//li[@data-sort="end_date"]')
     sort_by_date_elem.click()
 
@@ -89,6 +74,53 @@ def explore_projects(BROWSER):
     print "\nListing " + int_total[0] + " " + int_total[1]
     time.sleep(DELAYS.get("projects_load", TIME_DEFAULT))
 
+def open_new_tab(BROWSER, project_link):
+    windows_before  = BROWSER.current_window_handle
+    BROWSER.execute_script('''window.open('', "project_link_blank");''')
+    LOG.info("Opening New Tab")
+    windows_after = BROWSER.window_handles
+    new_window = [x for x in windows_after if x != windows_before][0]
+    BROWSER.switch_to_window(new_window)
+    BROWSER.get(project_link)
+    time.sleep(DELAYS.get("page_load", TIME_DEFAULT))
+    return windows_before
+
+def get_project_data(BROWSER):
+    proj_title_elem = BROWSER.find_element(By.XPATH, '//a[@class="hero__link"]')
+    proj_fund_elem = BROWSER.find_element(By.XPATH, '//h3/span[@class="money"]')
+    proj_pledge_elem = BROWSER.find_element(By.XPATH, '//div[@class="type-12 medium navy-500"]/span[@class="money"]')
+    backers_elem = BROWSER.find_element(By.XPATH, '//div[@class="mb0"]/h3[@class="mb0"]')
+    start_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[1]')
+    end_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[2]')
+    return proj_title_elem, proj_fund_elem, proj_pledge_elem, backers_elem, start_period_elem, end_period_elem
+
+def get_project_duration(start_period, end_period):
+    launch_date = datetime.strptime(start_period.text, '%b %d %Y')
+    success_date = datetime.strptime(end_period.text, '%b %d %Y')
+    duration = str(success_date - launch_date).split(' ')
+    return duration[0]+" "+duration[1].replace(',','')
+
+def save_to_file(BROWSER, project_link, title, funds, pledged, backers, start_period, end_period):
+    SUCCESSFUL_PROJECTS_LIST.write("Project " + str(PROJECT_COUNT) + ":" + project_link + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Title: " + (title.text).encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Total Funding: " + (funds.text).encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Plegded amount : " + (pledged.text).encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Backers: " + (backers.text).encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Funding Period: " + (start_period.text).encode('utf-8') + " - " + (end_period.text).encode('utf-8') + " (" + get_project_duration(start_period, end_period)  + ")\n\n")
+
+def print_to_console(project_link, title, funds, pledged, backers, start_period, end_period):
+    print "Project " + str(PROJECT_COUNT) + ":" + project_link
+    print "Title: " + title.text
+    print "Total Funding: " + funds.text
+    print "Plegded amount : " + pledged.text
+    print "Backers: " + backers.text
+    print "Funding Period: " + start_period.text + " - " + end_period.text +" (" + get_project_duration(start_period, end_period)  + ")\n"
+    
+def close_current_tab(BROWSER, windows_before):
+    BROWSER.close()
+    BROWSER.switch_to_window(windows_before)
+    time.sleep(DELAYS.get("go_back_load", TIME_DEFAULT))
+    
 def get_project_details(BROWSER):
     global PROJECT_COUNT
     global PAGE_COUNT
@@ -96,39 +128,13 @@ def get_project_details(BROWSER):
     for project in proj_list_elem:
         project_link =  project.get_attribute('href')
         PROJECT_COUNT += 1
-        SUCCESSFUL_PROJECTS_LIST.write("Project " + str(PROJECT_COUNT) + ":" + project_link + "\n")
-        print "Project " + str(PROJECT_COUNT) + ":" + project_link
+        
+        windows_before = open_new_tab(BROWSER, project_link)
+        title, funds, pledged, backers, start_period, end_period = get_project_data(BROWSER)
+        save_to_file(BROWSER, project_link, title, funds, pledged, backers, start_period, end_period)
+        print_to_console(project_link, title, funds, pledged, backers, start_period, end_period)
+        close_current_tab(BROWSER, windows_before)
 
-        windows_before  = BROWSER.current_window_handle
-        BROWSER.execute_script('''window.open('', "project_link_blank");''')
-        LOG.info("Opening New Tab")
-        windows_after = BROWSER.window_handles
-        new_window = [x for x in windows_after if x != windows_before][0]
-        BROWSER.switch_to_window(new_window)
-        BROWSER.get(project_link)
-        time.sleep(DELAYS.get("page_load", TIME_DEFAULT))
-
-        proj_title_elem = BROWSER.find_element(By.XPATH, '//a[@class="hero__link"]')
-        proj_fund_elem = BROWSER.find_element(By.XPATH, '//h3/span[@class="money"]')
-        proj_pledge_elem = BROWSER.find_element(By.XPATH, '//div[@class="type-12 medium navy-500"]/span[@class="money"]')
-        backers_elem = BROWSER.find_element(By.XPATH, '//div[@class="mb0"]/h3[@class="mb0"]')
-        start_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[1]')
-        end_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[2]')
-
-        SUCCESSFUL_PROJECTS_LIST.write("Title: " + (proj_title_elem.text).encode('utf-8') + "\n")
-        print "Title: " + proj_title_elem.text
-        SUCCESSFUL_PROJECTS_LIST.write("Total Funding: " + (proj_fund_elem.text).encode('utf-8') + "\n")
-        print "Total Funding: " + proj_fund_elem.text
-        SUCCESSFUL_PROJECTS_LIST.write("Plegded amount : " + (proj_pledge_elem.text).encode('utf-8') + "\n")
-        print "Plegded amount : " + proj_pledge_elem.text
-        SUCCESSFUL_PROJECTS_LIST.write("Backers: " + (backers_elem.text).encode('utf-8') + "\n")
-        print "Backers: " + backers_elem.text
-        SUCCESSFUL_PROJECTS_LIST.write("Funding Period: " + (start_period_elem.text).encode('utf-8') + " - " + (end_period_elem.text).encode('utf-8') +"\n\n")
-        print "Funding Period: " + start_period_elem.text + " - " + end_period_elem.text +"\n"
-
-        BROWSER.close()
-        BROWSER.switch_to_window(windows_before)
-        time.sleep(DELAYS.get("go_back_load", TIME_DEFAULT))
         if PROJECT_COUNT % 12 == 0:
             PAGE_COUNT += 1
             load_more_elem = BROWSER.find_element(By.XPATH, '//a[text()="Load more"]')
