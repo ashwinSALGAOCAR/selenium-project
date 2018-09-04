@@ -14,12 +14,15 @@ from selenium.common.exceptions import StaleElementReferenceException
 
 BROWSER = None
 TIME_DEFAULT = 5
+PROJECT_COUNT = 0
+PAGE_COUNT = 1
+SUCCESSFUL_PROJECTS_LIST = open("Successful_project_list.txt", "w+")
 
 LOG = logging.getLogger('Kickstarter_Search_Service')
 FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(level = logging.INFO, format = FORMAT)
 
-DELAYS = {'page_load': 3, 'search_load': 4, 'ajax_load': 2, 'go_back_load': 2}
+DELAYS = {'page_load': 3, 'search_load': 4, 'ajax_load': 2, 'go_back_load': 1}
 
 def init_browser(headless = False):
     options = Options()
@@ -82,15 +85,18 @@ def search(BROWSER):
 def explore_projects(BROWSER):
     total_proj_elem = BROWSER.find_element(By.XPATH, '//b[@class="count ksr-green-500"]')
     total_projects = total_proj_elem.text
-    print "\nListing " + total_projects
+    int_total = total_projects.split(' ')
+    print "\nListing " + int_total[0] + " " + int_total[1]
     time.sleep(DELAYS.get("projects_load", TIME_DEFAULT))
 
 def get_project_details(BROWSER):
-    PROJECT_COUNT = 0
-    proj_list_elem = BROWSER.find_elements(By.XPATH, '//a[@class="block img-placeholder w100p"]')
+    global PROJECT_COUNT
+    global PAGE_COUNT
+    proj_list_elem = BROWSER.find_elements(By.XPATH, '//div[@id="projects_list"]/div[' + str(PAGE_COUNT) + ']/div/div/div/div/div[2]/a[@class="block img-placeholder w100p"]')
     for project in proj_list_elem:
         project_link =  project.get_attribute('href')
-        PROJECT_COUNT+=1
+        PROJECT_COUNT += 1
+        SUCCESSFUL_PROJECTS_LIST.write("Project " + str(PROJECT_COUNT) + ":" + project_link + "\n")
         print "Project " + str(PROJECT_COUNT) + ":" + project_link
 
         windows_before  = BROWSER.current_window_handle
@@ -100,24 +106,31 @@ def get_project_details(BROWSER):
         new_window = [x for x in windows_after if x != windows_before][0]
         BROWSER.switch_to_window(new_window)
         BROWSER.get(project_link)
-        time.sleep(DELAYS.get("project_load", TIME_DEFAULT))
+        time.sleep(DELAYS.get("page_load", TIME_DEFAULT))
 
         proj_title_elem = BROWSER.find_element(By.XPATH, '//a[@class="hero__link"]')
-        print "Title: " + proj_title_elem.text
         proj_fund_elem = BROWSER.find_element(By.XPATH, '//h3/span[@class="money"]')
-        print "Total Funding: " + proj_fund_elem.text
         proj_pledge_elem = BROWSER.find_element(By.XPATH, '//div[@class="type-12 medium navy-500"]/span[@class="money"]')
-        print "Plegded of : " + proj_pledge_elem.text + " goal"
         backers_elem = BROWSER.find_element(By.XPATH, '//div[@class="mb0"]/h3[@class="mb0"]')
-        print "Backers: " + backers_elem.text
         start_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[1]')
         end_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[2]')
+
+        SUCCESSFUL_PROJECTS_LIST.write("Title: " + (proj_title_elem.text).encode('utf-8') + "\n")
+        print "Title: " + proj_title_elem.text
+        SUCCESSFUL_PROJECTS_LIST.write("Total Funding: " + (proj_fund_elem.text).encode('utf-8') + "\n")
+        print "Total Funding: " + proj_fund_elem.text
+        SUCCESSFUL_PROJECTS_LIST.write("Plegded amount : " + (proj_pledge_elem.text).encode('utf-8') + "\n")
+        print "Plegded amount : " + proj_pledge_elem.text
+        SUCCESSFUL_PROJECTS_LIST.write("Backers: " + (backers_elem.text).encode('utf-8') + "\n")
+        print "Backers: " + backers_elem.text
+        SUCCESSFUL_PROJECTS_LIST.write("Funding Period: " + (start_period_elem.text).encode('utf-8') + " - " + (end_period_elem.text).encode('utf-8') +"\n\n")
         print "Funding Period: " + start_period_elem.text + " - " + end_period_elem.text +"\n"
 
         BROWSER.close()
         BROWSER.switch_to_window(windows_before)
         time.sleep(DELAYS.get("go_back_load", TIME_DEFAULT))
-        if PROJECT_COUNT == 12:
+        if PROJECT_COUNT % 12 == 0:
+            PAGE_COUNT += 1
             load_more_elem = BROWSER.find_element(By.XPATH, '//a[text()="Load more"]')
             load_more_elem.click()
             time.sleep(DELAYS.get("page_load", TIME_DEFAULT))
@@ -132,4 +145,5 @@ if __name__ == '__main__':
     get_kickstarter_page(browser)
     search(browser)
     explore_projects(browser)
-    get_project_details(browser)
+    while True:
+        get_project_details(browser)
