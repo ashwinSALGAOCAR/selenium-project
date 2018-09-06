@@ -27,7 +27,7 @@ def init_browser(headless = False):
     options = Options()
     options.set_headless(headless = headless)
     BROWSER = webdriver.Firefox(firefox_options = options)
-    #BROWSER.set_window_size(800, 750)
+    BROWSER.set_window_size(800, 750)
     LOG.info("Running the Browser.")
     return BROWSER
 
@@ -67,12 +67,14 @@ def search(BROWSER):
     sort_by_date_elem = BROWSER.find_element(By.XPATH, '//li[@data-sort="end_date"]')
     sort_by_date_elem.click()
 
-def explore_projects(BROWSER):
+def total_projects(BROWSER):
     total_proj_elem = BROWSER.find_element(By.XPATH, '//b[@class="count ksr-green-500"]')
     total_projects = total_proj_elem.text
     int_total = total_projects.split(' ')
+    SUCCESSFUL_PROJECTS_LIST.write("Listing " + int_total[0] + " " + int_total[1] + "\n\n")
     print "\nListing " + int_total[0] + " " + int_total[1]
     time.sleep(DELAYS.get("projects_load", TIME_DEFAULT))
+    return int(int_total[0])
 
 def open_new_tab(BROWSER, project_link):
     windows_before  = BROWSER.current_window_handle
@@ -86,35 +88,35 @@ def open_new_tab(BROWSER, project_link):
     return windows_before
 
 def get_project_data(BROWSER):
-    proj_title_elem = BROWSER.find_element(By.XPATH, '//a[@class="hero__link"]')
-    proj_fund_elem = BROWSER.find_element(By.XPATH, '//h3/span[@class="money"]')
-    proj_pledge_elem = BROWSER.find_element(By.XPATH, '//div[@class="type-12 medium navy-500"]/span[@class="money"]')
-    backers_elem = BROWSER.find_element(By.XPATH, '//div[@class="mb0"]/h3[@class="mb0"]')
-    start_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[1]')
-    end_period_elem = BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[2]')
-    return proj_title_elem, proj_fund_elem, proj_pledge_elem, backers_elem, start_period_elem, end_period_elem
+    title = (BROWSER.find_element(By.XPATH, '//a[@class="hero__link"]')).text
+    fund = (BROWSER.find_element(By.XPATH, '//h3/span[@class="money"]')).text
+    pledge = (BROWSER.find_element(By.XPATH, '//div[@class="type-12 medium navy-500"]/span[@class="money"]')).text
+    backers = (BROWSER.find_element(By.XPATH, '//div[@class="mb0"]/h3[@class="mb0"]')).text
+    start_period = (BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[1]')).text
+    end_period = (BROWSER.find_element(By.XPATH, '//p[@class="f5"]/time[2]')).text
+    return title, fund, pledge, backers, start_period, end_period
 
 def get_project_duration(start_period, end_period):
-    launch_date = datetime.strptime(start_period.text, '%b %d %Y')
-    success_date = datetime.strptime(end_period.text, '%b %d %Y')
+    launch_date = datetime.strptime(start_period, '%b %d %Y')
+    success_date = datetime.strptime(end_period, '%b %d %Y')
     duration = str(success_date - launch_date).split(' ')
     return duration[0]+" "+duration[1].replace(',','')
 
-def save_to_file(BROWSER, project_link, title, funds, pledged, backers, start_period, end_period):
-    SUCCESSFUL_PROJECTS_LIST.write("Project " + str(PROJECT_COUNT) + ":" + project_link + "\n")
-    SUCCESSFUL_PROJECTS_LIST.write("Title: " + (title.text).encode('utf-8') + "\n")
-    SUCCESSFUL_PROJECTS_LIST.write("Total Funding: " + (funds.text).encode('utf-8') + "\n")
-    SUCCESSFUL_PROJECTS_LIST.write("Plegded amount : " + (pledged.text).encode('utf-8') + "\n")
-    SUCCESSFUL_PROJECTS_LIST.write("Backers: " + (backers.text).encode('utf-8') + "\n")
-    SUCCESSFUL_PROJECTS_LIST.write("Funding Period: " + (start_period.text).encode('utf-8') + " - " + (end_period.text).encode('utf-8') + " (" + get_project_duration(start_period, end_period)  + ")\n\n")
-
 def print_to_console(project_link, title, funds, pledged, backers, start_period, end_period):
     print "Project " + str(PROJECT_COUNT) + ":" + project_link
-    print "Title: " + title.text
-    print "Total Funding: " + funds.text
-    print "Plegded amount : " + pledged.text
-    print "Backers: " + backers.text
-    print "Funding Period: " + start_period.text + " - " + end_period.text +" (" + get_project_duration(start_period, end_period)  + ")\n"
+    print "Title: " + title
+    print "Total Funding: " + funds
+    print "Plegded amount: " + pledged
+    print "Backers: " + backers
+    print "Funding Period: " + start_period + " - " + end_period +" (" + get_project_duration(start_period, end_period)  + ")\n"
+
+def save_to_file(project_link, title, funds, pledged, backers, start_period, end_period):
+    SUCCESSFUL_PROJECTS_LIST.write("Project " + str(PROJECT_COUNT) + ":" + project_link + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Title: " + title.encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Total Funding: " + funds.encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Plegded amount: " + pledged.encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Backers: " + backers.encode('utf-8') + "\n")
+    SUCCESSFUL_PROJECTS_LIST.write("Funding Period: " + start_period.encode('utf-8') + " - " + end_period.encode('utf-8') + " (" + get_project_duration(start_period, end_period)  + ")\n\n")
     
 def close_current_tab(BROWSER, windows_before):
     BROWSER.close()
@@ -131,8 +133,8 @@ def get_project_details(BROWSER):
         
         windows_before = open_new_tab(BROWSER, project_link)
         title, funds, pledged, backers, start_period, end_period = get_project_data(BROWSER)
-        save_to_file(BROWSER, project_link, title, funds, pledged, backers, start_period, end_period)
         print_to_console(project_link, title, funds, pledged, backers, start_period, end_period)
+        save_to_file(project_link, title, funds, pledged, backers, start_period, end_period)
         close_current_tab(BROWSER, windows_before)
 
         if PROJECT_COUNT % 12 == 0:
@@ -150,6 +152,10 @@ if __name__ == '__main__':
         sys.exit()
     get_kickstarter_page(browser)
     search(browser)
-    explore_projects(browser)
+    all_projects = total_projects(browser)
     while True:
         get_project_details(browser)
+        if PROJECT_COUNT == all_projects:
+            browser.close()
+            LOG.info("Done with all projects!")
+            sys.exit()
